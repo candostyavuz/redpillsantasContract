@@ -27,7 +27,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     address payable private admin3;
 
     uint256 public gameStartTime;
-    bool public isGameFinished = false;
+    bool public isGameActive = false;
 
     mapping (uint256 => uint256) public tokenStrength;
 
@@ -39,33 +39,18 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         gameStartTime = block.timestamp;
     }
 
-    function claimSanta(uint256 _amount) public payable {
+    function claimSanta(uint256 _amount) public payable nonReentrant {
         require(!paused, "Minting is paused!");
+        require(msg.sender != address(0));
         require(_amount > 0, "Mint amount cannot be zero!");
         require(msg.value >= mintPrice * _amount, "Insufficient funds, ngmi.");
         require(remainingSupply >= _amount, "Amount exceeds remaining supply!");
         require(_amount < 21, "Max 20 Santas can be minted in one order!");
 
-        // Bundle minting rewards
-        uint256 mintAmount;
-        if (_amount == 20) {
-            mintAmount = _amount + 7;
-        } else if (_amount >= 15) {
-            mintAmount = _amount + 5;
-        } else if (_amount >= 10) {
-            mintAmount = _amount + 3;
-        } else if (_amount >= 5) {
-            mintAmount = _amount + 1;
-        } else {
-            mintAmount = _amount;
-        }
+        uint256 ownerTokenCount = balanceOf(msg.sender);
+        require(ownerTokenCount <= 200, "Max 200 Santas are allowed per wallet!");
 
-        require(
-            remainingSupply >= mintAmount,
-            "Amount with bundles exceeds remaining supply!"
-        );
-
-        for (uint256 i = 0; i < mintAmount; i++) {
+        for (uint256 i = 0; i < _amount; i++) {
             lastMintedTokenId = _mintRandomID(msg.sender);
             setBaseStrength(msg.sender, lastMintedTokenId);
         }
@@ -124,17 +109,17 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         require ( minter == ownerOf(tokenId), "You are not the owner of this NFT");
 
         if(tokenId >= 0 && tokenId < 8) {                // unique
-            tokenStrength[tokenId] = 256;
+            tokenStrength[tokenId] = 4000;
         } else if(tokenId >= 8 && tokenId < 4564){       // common
-            tokenStrength[tokenId] = 2;
+            tokenStrength[tokenId] = 80;
         } else if(tokenId >= 4564 && tokenId < 8402){    // cool
-            tokenStrength[tokenId] = 4;
+            tokenStrength[tokenId] = 100;
         } else if(tokenId >= 8402 && tokenId < 10800){   // rare
-            tokenStrength[tokenId] = 8;
+            tokenStrength[tokenId] = 150;
         } else if(tokenId >= 10800 && tokenId < 11760){  // epic
-            tokenStrength[tokenId] = 32;
+            tokenStrength[tokenId] = 500;
         } else {                                            // legendary
-            tokenStrength[tokenId] = 128;
+            tokenStrength[tokenId] = 2000;
         }
     }
 
@@ -199,16 +184,21 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         admin3 = _admin3;
     }
 
+    function setGameActive (bool _state) public onlyOwner {
+        isGameActive = _state;
+    }
+
     function withdraw() external onlyOwner {
         require(block.timestamp >= gameStartTime + 180 days, "The game still continues. Timelock is active!");
-        require(isGameFinished == false, "The game is already won by someone!");
+        require(isGameActive == true, "The game is already won by someone!");
    
         payable(msg.sender).transfer(address(this).balance);
-        isGameFinished = true;
+        isGameActive = false;
     }
 
     function setStrength(uint256 tokenId, uint256 _newStrength) external onlyAuthorized {
         require(!paused, "Contract is paused!");
+        require(_newStrength <= 2000, "Maximum upgradable strength is 2000!");
         tokenStrength[tokenId] = _newStrength;
     }
 
