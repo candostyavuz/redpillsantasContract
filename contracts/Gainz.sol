@@ -20,6 +20,9 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     struct StakedSantaObj {
         // Current strength of the Santa
         uint256 strength;
+        // Base rarity of Santas. It won't be upgraded once assigned
+        // 1- common (stay away from 0 frens), 2-cool, 3-rare, 4-epic, 5-legend, 6-unique
+        uint32 rarity;
         // Stake begin time
         uint32 stakeBeginTime;
         // # of Redpills taken
@@ -36,6 +39,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     //Events
     event Staked(uint256 tokenId, uint256 timeStamp);
     event UnStaked(uint256 tokenId, uint256 timeStamp);
+    event TierUp(uint256 tokenId, uint256 oldStrength, uint256 newStrength);
     event GainzMinted(address minter, uint256 amount);
     event GainzBurned(address minter, uint256 amount);
 
@@ -63,9 +67,27 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
 
         uint256 strength = santaContract.tokenStrength(tokenId); // take base strength from the NFT contract
         uint32 currentTs = uint32(block.timestamp);
+        uint32 rarity = 0;
+
+        if(strength == 80) {              // common
+            rarity = 1;
+        } else if(strength == 100){       // cool
+            rarity = 2;
+        } else if(strength == 150){       // rare
+            rarity = 3;
+        } else if(strength == 500){       // epic
+            rarity = 4;
+        } else if(strength == 2000){      // legendary
+            rarity = 5;
+        } else if(strength == 4000){      // unique
+            rarity = 6;
+        }
+
+        require(rarity != 0, "Rarity Issue!");
 
         stakedSantas[tokenId] = StakedSantaObj(
             strength,
+            rarity,
             currentTs,
             uint48(0),
             uint32(currentTs) + uint32(COOLDOWN_PERIOD)
@@ -147,6 +169,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         }
         if (totalGainzEarned > 0) {
             _mint(msg.sender, totalGainzEarned); // Mint $GAINZ to user's wallet
+            // Unleash the event
             emit GainzMinted(msg.sender, totalGainzEarned);
         }
     }
@@ -170,6 +193,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
             santa.strength = 0;
             stakedSantas[tokenId] = santa;
 
+            // Unleash the event
             emit UnStaked(tokenId, block.timestamp);
         }
     }
@@ -191,13 +215,94 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         _unstakeMultiple(tokenIDs);
     }
 
-    // Update pillsTaken value of a Santa
-    // Can't take any RedPills unless Santa is currently staked
+    /**
+     @dev This function will be called externally by RedPillNFT.sol contract
+     i.   Updates pillsTaken value of a Santa
+     ii.  Levels up Santa's strength to 1 Tier Up
+     iii. Updates cooldown period
+     -> Can't take any RedPills unless Santa is currently staked
+    */
    function takeRedPill(uint256 tokenId) external onlyAuthorized {
-       StakedSantaObj memory santa = stakedSantas[tokenId];
-       require(santa.strength > 0, "Santa is not staked");
-        //   Continue from there...
-           
+        StakedSantaObj memory santa = stakedSantas[tokenId];
+        require(santa.strength > 0, "Santa is not staked!");
+        require(santa.strength <= 500, "You lookin for a unique or smth ser...");
+        require(block.timestamp >= santa.coolDownTime, "Santa is on Cooldown");
+
+        santa.pillsTaken++;
+        uint256 currentStrength = santa.strength;
+
+        if(currentStrength == 80) {              // common -> cool
+            santa.strength  = 100;
+        } else if(currentStrength == 100){       // cool -> rare
+            santa.strength  = 150;
+        } else if(currentStrength == 150){       // rare -> epic
+            santa.strength  = 500;
+        } else if(currentStrength == 500){       // epic -> legendary
+            santa.strength  = 2000;
+        } 
+
+        santa.coolDownTime = uint32(block.timestamp + COOLDOWN_PERIOD);
+        // Update santa parameters:
+        stakedSantas[tokenId] = santa;
+        
+        // Update total global strength value
+        totalStrengthAcquired += (santa.strength - currentStrength);
+
+        // Finally Update the RedPillSanta contract
+        RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
+        santaContract.setStrength(tokenId, santa.strength);
+
+        // Unleash the event
+        emit TierUp(tokenId, currentStrength, santa.strength);
+   }
+
+    // Burns given amount of $GAINZ from sender's wallet
+   function _burnGainz (address sender, uint256 gainzAmount) internal {
+       require(balanceOf(sender) >= gainzAmount, "Not enough $GAINZ to burn!");
+       _burn(sender, gainzAmount);
+
+       // Unleash the event
+       emit GainzBurned(sender, gainzAmount);
+   }
+
+   function burnGainz (address sender, uint256 gainzAmount) external onlyAuthorized {
+       _burnGainz(sender, gainzAmount);
+   }
+
+    // Will be used to mint $GAINZ to holders on special occasions
+    // Will also be called by RedPill contract 
+   function mintGainz(address _to, uint256 amount) external onlyAuthorized {
+       _mint(_to, amount);
+       emit GainzMinted(_to, amount);
+   }
+
+    // AirDrops $GAINZ to holders of specified tokenId ranges
+   function airDropGainz(uint256 _fromTokenId, uint256 _toTokenId, uint256 amount) external onlyOwner {
+       RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
+
+       for(uint256 i = _fromTokenId; i <= _toTokenId; i++) {
+           address tokenOwner = santaContract.ownerOf(i);
+           if(tokenOwner != address(0)) {
+               _mint(tokenOwner, amount);
+           }
+       }
+   }
+
+    // Restores claimable $GAINZ for stakers specified with tokenId range
+    // Fundus are safu!
+   function restoreUserGainz (uint256 _fromTokenId, uint256 _toTokenId) external onlyOwner {
+        RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
+
+        for(uint256 i = _fromTokenId; i <= _toTokenId; i++) {
+           address tokenOwner = santaContract.ownerOf(i);
+           StakedSantaObj memory santa = stakedSantas[i];
+           // Only restore balances for staker wallets
+           if(santa.strength > 0) {
+               _mint(tokenOwner, viewEarnedGainz(i));
+               santa.stakeBeginTime = uint32(block.timestamp);
+               stakedSantas[i] = santa;
+           }
+       }
    }
 
 }
