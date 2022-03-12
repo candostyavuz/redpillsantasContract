@@ -9,10 +9,10 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     address public SANTA_CONTRACT;
 
     // $GAINZ price for per Red Pill NFT
-    uint256 RED_PILL_PRICE = 4000 * 10 * decimals();
+    uint256 RED_PILL_PRICE = 4000 * 10 ** decimals();
 
     // Required $GAINZ amount to win the game
-    uint256 CHEST_PRICE = 1_000_000 * 10 * decimals();
+    uint256 CHEST_PRICE = 1_000_000 * 10 ** decimals();
 
     // Leveling cooldown period
     uint32 public COOLDOWN_PERIOD = 1 hours;
@@ -56,6 +56,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
 
     function _stake(uint256 tokenId) internal {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
+        require(santaContract.isGameActive() == true, "Game is not active!");
         require(
             santaContract.ownerOf(tokenId) == msg.sender,
             "You are not the owner ser!"
@@ -152,6 +153,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     // Mints earned amount of $GAINZ to sender's wallet
     function _claimGainz(uint256[] calldata tokenIDs) internal {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
+        require(santaContract.isGameActive() == true, "Game is not active!");
         uint256 totalGainzEarned = 0;
 
         for (uint256 i = 0; i < tokenIDs.length; i++) {
@@ -181,8 +183,9 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     // Unstake santa and stop earning $GAINZ, ngmi for sure.
     function _unstake(uint256 tokenId) internal {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
+        require(santaContract.isGameActive() == true, "Game is not active!");
         require(santaContract.ownerOf(tokenId) == msg.sender, "Sender is not the owner of that tokenID!");
-
+    
         StakedSantaObj memory santa = stakedSantas[tokenId];
         if(santa.strength > 0) {    // Santa is staked
             totalStakedSanta--;
@@ -223,7 +226,10 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
      -> Can't take any RedPills unless Santa is currently staked
     */
    function takeRedPill(uint256 tokenId) external onlyAuthorized {
+        RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
         StakedSantaObj memory santa = stakedSantas[tokenId];
+
+        require(santaContract.isGameActive() == true, "Game is not active!");
         require(santa.strength > 0, "Santa is not staked!");
         require(santa.strength <= 500, "You lookin for a unique or smth ser...");
         require(block.timestamp >= santa.coolDownTime, "Santa is on Cooldown");
@@ -249,7 +255,6 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         totalStrengthAcquired += (santa.strength - currentStrength);
 
         // Finally Update the RedPillSanta contract
-        RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
         santaContract.setStrength(tokenId, santa.strength);
 
         // Unleash the event
