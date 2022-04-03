@@ -101,7 +101,6 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
             ) % remainingSupply;
     }
 
-    // FIX THIS PART!
     function setBaseStrength(address minter, uint256 tokenId) internal {
          require(
             _exists(tokenId),
@@ -111,16 +110,18 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
 
         if(tokenId >= 0 && tokenId < 13) {               // unique
             tokenStrength[tokenId] = 400;
-        } else if(tokenId >= 13 && tokenId < 4564){      // common
+        } else if(tokenId >= 13 && tokenId < 1532){      // common
             tokenStrength[tokenId] = 8;
-        } else if(tokenId >= 4564 && tokenId < 8402){    // cool
+        } else if(tokenId >= 1532 && tokenId < 2807){    // cool
             tokenStrength[tokenId] = 10;
-        } else if(tokenId >= 8402 && tokenId < 10800){   // rare
+        } else if(tokenId >= 2807 && tokenId < 3604){    // rare
             tokenStrength[tokenId] = 15;
-        } else if(tokenId >= 10800 && tokenId < 11760){  // epic
+        } else if(tokenId >= 3604 && tokenId < 3922){    // epic
             tokenStrength[tokenId] = 50;
-        } else {                                            // legendary
+        } else if (tokenId >= 3922 && tokenId < 4000) {  // legendary
             tokenStrength[tokenId] = 200;
+        } else {                                            // ERROR CONDITION!
+            tokenStrength[tokenId] = 0;
         }
     }
 
