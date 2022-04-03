@@ -8,14 +8,14 @@ import "./RedPillSanta.sol";
 contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     address public SANTA_CONTRACT;
 
-    // $GAINZ price for per Red Pill NFT
-    uint256 RED_PILL_PRICE = 4000 * 10 ** decimals();
+    // // $GAINZ price for per Red Pill NFT
+    // uint256 public RED_PILL_PRICE = 4000 * 10 ** decimals();
 
-    // Required $GAINZ amount to win the game
-    uint256 CHEST_PRICE = 1_000_000 * 10 ** decimals();
+    // // Required $GAINZ amount to win the game
+    // uint256 public CHEST_PRICE = 1_000_000 * 10 ** decimals();
 
     // Leveling cooldown period
-    uint32 public COOLDOWN_PERIOD = 1 hours;
+    uint32 public COOLDOWN_PERIOD = 1 days;
 
     struct StakedSantaObj {
         // Current strength of the Santa
@@ -57,30 +57,24 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     function _stake(uint256 tokenId) internal {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
         require(santaContract.isGameActive() == true, "Game is not active!");
-        require(
-            santaContract.ownerOf(tokenId) == msg.sender,
-            "You are not the owner ser!"
-        );
-        require(
-            stakedSantas[tokenId].strength == 0,
-            "This santa is already staked ser!"
-        );
+        require(santaContract.ownerOf(tokenId) == msg.sender, "NOT OWNER!");
+        require(stakedSantas[tokenId].strength == 0, "ALREADY STAKED!");
 
         uint256 strength = santaContract.tokenStrength(tokenId); // take base strength from the NFT contract
         uint32 currentTs = uint32(block.timestamp);
         uint32 rarity = 0;
 
-        if(strength == 80) {              // common
+        if(strength == 8) {             // common
             rarity = 1;
-        } else if(strength == 100){       // cool
+        } else if(strength == 10){       // cool
             rarity = 2;
-        } else if(strength == 150){       // rare
+        } else if(strength == 15){       // rare
             rarity = 3;
-        } else if(strength == 500){       // epic
+        } else if(strength == 50){       // epic
             rarity = 4;
-        } else if(strength == 2000){      // legendary
+        } else if(strength == 200){      // legendary
             rarity = 5;
-        } else if(strength == 4000){      // unique
+        } else if(strength == 400){      // unique
             rarity = 6;
         }
 
@@ -123,9 +117,8 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     function viewEarnedGainz(uint256 tokenId) public view returns (uint256) {
         StakedSantaObj memory santa = stakedSantas[tokenId];
         if (santa.strength > 0) {
-            uint256 gainzPerDay = (santa.strength * 10 ** decimals());
-            uint256 daysPassed = (block.timestamp - santa.stakeBeginTime) /
-                1 days;
+            uint256 gainzPerDay = (santa.strength * 10 ** decimals());  // TO BE UPDATED -> ADD INTERVALS !!!
+            uint256 daysPassed = (block.timestamp - santa.stakeBeginTime) / 1 days;
             return gainzPerDay * daysPassed;
         } else {
             return 0;
@@ -139,8 +132,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         uint256 totalGainzEarned = 0;
         for (uint256 i = 0; i < ownerSantaIDs.length; i++) {
             StakedSantaObj memory santa = stakedSantas[ownerSantaIDs[i]];
-            if (santa.strength > 0) {
-                // To be sure that santa is staked
+            if (santa.strength > 0) { // To be sure that santa is staked
                 uint256 earnedAmount = viewEarnedGainz(ownerSantaIDs[i]);
                 if (earnedAmount > 0) {
                     totalGainzEarned += earnedAmount;
@@ -207,23 +199,20 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         }
     }
 
-    // NGMI
-    function unstake(uint256[] calldata tokenIDs) external {
-        _unstakeMultiple(tokenIDs);
-    }
-
-    // Are you quitting ser?
+    // Are you quitting? NGMI
     function claimAllAndUnstake(uint256[] calldata tokenIDs) external nonReentrant{
         _claimGainz(tokenIDs);
         _unstakeMultiple(tokenIDs);
     }
 
     /**
-     @dev This function will be called externally by RedPillNFT.sol contract
+     @dev This function will be called externally by RedPill.sol contract
      i.   Updates pillsTaken value of a Santa
      ii.  Levels up Santa's strength to 1 Tier Up
      iii. Updates cooldown period
-     -> Can't take any RedPills unless Santa is currently staked
+     -> Can't take RedPill unless Santa is currently staked
+     -> Can't take RedPill if Cooldown period has not ended
+     -> Can't take RedPill if Santa is already at the Legendary tier
     */
    function takeRedPill(uint256 tokenId) external onlyAuthorized {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
@@ -231,20 +220,20 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
 
         require(santaContract.isGameActive() == true, "Game is not active!");
         require(santa.strength > 0, "Santa is not staked!");
-        require(santa.strength <= 500, "You lookin for a unique or smth ser...");
+        require(santa.strength <= 50, "Santa is already at the max upgradeble tier");
         require(block.timestamp >= santa.coolDownTime, "Santa is on Cooldown");
 
         santa.pillsTaken++;
         uint256 currentStrength = santa.strength;
 
-        if(currentStrength == 80) {              // common -> cool
-            santa.strength  = 100;
-        } else if(currentStrength == 100){       // cool -> rare
-            santa.strength  = 150;
-        } else if(currentStrength == 150){       // rare -> epic
-            santa.strength  = 500;
-        } else if(currentStrength == 500){       // epic -> legendary
-            santa.strength  = 2000;
+        if(currentStrength == 8) {              // common -> cool
+            santa.strength  = 10;
+        } else if(currentStrength == 10){       // cool -> rare
+            santa.strength  = 15;
+        } else if(currentStrength == 15){       // rare -> epic
+            santa.strength  = 50;
+        } else if(currentStrength == 50){       // epic -> legendary
+            santa.strength  = 200;
         } 
 
         santa.coolDownTime = uint32(block.timestamp + COOLDOWN_PERIOD);

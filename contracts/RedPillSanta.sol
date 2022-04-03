@@ -11,12 +11,12 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     using Strings for uint256;
 
     // State Variables
-    uint256 public constant MAX_SANTAS = 12000;
+    uint256 public constant MAX_SANTAS = 4000;
     string private _baseTokenURI;
     string public baseExtension = ".json";
     bool public paused = true;
-    uint256 public mintPrice = 2 ether;
-    uint256 public _royaltyAmount = 50;
+    uint256 public mintPrice = 1.25 ether;  // 1.25 AVAX
+    uint256 public _royaltyAmount = 50;     // 5% royalty
 
     uint256[12000] public remainingTokens;
     uint256 public remainingSupply = MAX_SANTAS;
@@ -48,7 +48,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         require(_amount < 21, "Max 20 Santas can be minted in one order!");
 
         uint256 ownerTokenCount = balanceOf(msg.sender);
-        require(ownerTokenCount <= 200, "Max 200 Santas are allowed per wallet!");
+        require(ownerTokenCount <= 250, "Max 250 Santas are allowed per wallet!");
 
         for (uint256 i = 0; i < _amount; i++) {
             lastMintedTokenId = _mintRandomID(msg.sender);
@@ -58,9 +58,9 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     }
 
     function distributeMintFee(uint256 _fee) private {
-        uint256 poolShare = (_fee*51)/100; // 51% of the minting fees are added into the big prize pool
+        uint256 poolShare = (_fee * 60)/100; // 60% of the minting fees are added into the big prize pool
 
-        uint256 perMemberShare = poolShare/3;
+        uint256 perMemberShare = (_fee - poolShare)/3;
         (admin1).transfer(perMemberShare);
         (admin2).transfer(perMemberShare);
         (admin3).transfer(perMemberShare);
@@ -101,6 +101,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
             ) % remainingSupply;
     }
 
+    // FIX THIS PART!
     function setBaseStrength(address minter, uint256 tokenId) internal {
          require(
             _exists(tokenId),
@@ -108,18 +109,18 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         );
         require ( minter == ownerOf(tokenId), "You are not the owner of this NFT");
 
-        if(tokenId >= 0 && tokenId < 8) {                // unique
-            tokenStrength[tokenId] = 4000;
-        } else if(tokenId >= 8 && tokenId < 4564){       // common
-            tokenStrength[tokenId] = 80;
+        if(tokenId >= 0 && tokenId < 13) {               // unique
+            tokenStrength[tokenId] = 400;
+        } else if(tokenId >= 13 && tokenId < 4564){      // common
+            tokenStrength[tokenId] = 8;
         } else if(tokenId >= 4564 && tokenId < 8402){    // cool
-            tokenStrength[tokenId] = 100;
+            tokenStrength[tokenId] = 10;
         } else if(tokenId >= 8402 && tokenId < 10800){   // rare
-            tokenStrength[tokenId] = 150;
+            tokenStrength[tokenId] = 15;
         } else if(tokenId >= 10800 && tokenId < 11760){  // epic
-            tokenStrength[tokenId] = 500;
+            tokenStrength[tokenId] = 50;
         } else {                                            // legendary
-            tokenStrength[tokenId] = 2000;
+            tokenStrength[tokenId] = 200;
         }
     }
 
@@ -145,8 +146,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         );
 
         string memory currentBaseURI = _baseURI();
-        uint256 adjustedTokenId = tokenId + 1;  // to keep returned URI between 1.json - 12000.json
-        return bytes(currentBaseURI).length > 0 ? string(abi.encodePacked(currentBaseURI, adjustedTokenId.toString(), baseExtension)): "";
+        return bytes(currentBaseURI).length > 0 ? string(abi.encodePacked(currentBaseURI, tokenId.toString(), baseExtension)): "";
     }
 
     function royaltyInfo(uint256 tokenId, uint256 salePrice) external view override returns (address receiver, uint256 royaltyAmount){
@@ -188,17 +188,17 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         isGameActive = _state;
     }
 
-    function withdraw() external onlyOwner {
-        require(block.timestamp >= gameStartTime + 180 days, "The game still continues. Timelock is active!");
-        require(isGameActive == true, "The game is already won by someone!");
+    // function withdraw() external onlyOwner {
+    //     require(block.timestamp >= gameStartTime + 180 days, "The game still continues. Timelock is active!");
+    //     require(isGameActive == true, "GAME NOT ACTIVE!");
    
-        payable(msg.sender).transfer(address(this).balance);
-        isGameActive = false;
-    }
+    //     payable(msg.sender).transfer(address(this).balance);
+    //     isGameActive = false;
+    // }
 
     function setStrength(uint256 tokenId, uint256 _newStrength) external onlyAuthorized {
         require(!paused, "Contract is paused!");
-        require(_newStrength <= 2000, "Maximum upgradable strength is 2000!");
+        require(_newStrength <= 200, "Maximum upgradable strength is 200!");
         tokenStrength[tokenId] = _newStrength;
     }
 
