@@ -18,10 +18,11 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     uint256 public mintPrice = 1.25 ether;  // 1.25 AVAX
     uint256 public _royaltyAmount = 50;     // 5% royalty
 
-    uint256[12000] public remainingTokens;
+    uint256[4000] public remainingTokens;
     uint256 public remainingSupply = MAX_SANTAS;
     uint256 public lastMintedTokenId;
 
+    address payable private stakeWallet;
     address payable private admin1;
     address payable private admin2;
     address payable private admin3;
@@ -58,9 +59,11 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     }
 
     function distributeMintFee(uint256 _fee) private {
-        uint256 poolShare = (_fee * 60)/100; // 60% of the minting fees are added into the big prize pool
+        uint256 poolShare = (_fee * 30)/100;    // 30% of fees are added into the big prize pool
+        uint256 stakeShare = poolShare;          // 30% of fees are added into the stake wallet
+        (stakeWallet).transfer(stakeShare);
 
-        uint256 perMemberShare = (_fee - poolShare)/3;
+        uint256 perMemberShare = (_fee - poolShare - stakeShare)/3;
         (admin1).transfer(perMemberShare);
         (admin2).transfer(perMemberShare);
         (admin3).transfer(perMemberShare);
@@ -109,17 +112,17 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         require ( minter == ownerOf(tokenId), "You are not the owner of this NFT");
 
         if(tokenId >= 0 && tokenId < 13) {               // unique
-            tokenStrength[tokenId] = 400;
+            tokenStrength[tokenId] = 500;
         } else if(tokenId >= 13 && tokenId < 1532){      // common
-            tokenStrength[tokenId] = 8;
+            tokenStrength[tokenId] = 30;
         } else if(tokenId >= 1532 && tokenId < 2807){    // cool
-            tokenStrength[tokenId] = 10;
+            tokenStrength[tokenId] = 90;
         } else if(tokenId >= 2807 && tokenId < 3604){    // rare
-            tokenStrength[tokenId] = 15;
-        } else if(tokenId >= 3604 && tokenId < 3922){    // epic
-            tokenStrength[tokenId] = 50;
-        } else if (tokenId >= 3922 && tokenId < 4000) {  // legendary
             tokenStrength[tokenId] = 200;
+        } else if(tokenId >= 3604 && tokenId < 3922){    // epic
+            tokenStrength[tokenId] = 300;
+        } else if (tokenId >= 3922 && tokenId < 4000) {  // legendary
+            tokenStrength[tokenId] = 400;
         } else {                                            // ERROR CONDITION!
             tokenStrength[tokenId] = 0;
         }
@@ -151,7 +154,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     }
 
     function royaltyInfo(uint256 tokenId, uint256 salePrice) external view override returns (address receiver, uint256 royaltyAmount){
-        if(tokenId >= 0 && tokenId < 8) {
+        if(tokenId >= 0 && tokenId < 13) {
             return (owner(), salePrice * (_royaltyAmount+10)/1000);
         } else {
             return (owner(), salePrice * (_royaltyAmount)/1000);
@@ -185,21 +188,23 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         admin3 = _admin3;
     }
 
+    function setStakeAddress (address payable _stakeWallet) public onlyOwner {
+        stakeWallet = _stakeWallet;
+    }
+
     function setGameActive (bool _state) public onlyOwner {
         isGameActive = _state;
     }
 
-    // function withdraw() external onlyOwner {
-    //     require(block.timestamp >= gameStartTime + 180 days, "The game still continues. Timelock is active!");
-    //     require(isGameActive == true, "GAME NOT ACTIVE!");
-   
-    //     payable(msg.sender).transfer(address(this).balance);
-    //     isGameActive = false;
-    // }
+    function withdraw() external onlyOwner {
+        require(block.timestamp >= gameStartTime + 180 days, "The game still continues. Timelock is active!");   
+        payable(msg.sender).transfer(address(this).balance);
+        isGameActive = false;
+    }
 
     function setStrength(uint256 tokenId, uint256 _newStrength) external onlyAuthorized {
         require(!paused, "Contract is paused!");
-        require(_newStrength <= 200, "Maximum upgradable strength is 200!");
+        require(_newStrength <= 400, "Maximum upgradable strength is 400!");
         tokenStrength[tokenId] = _newStrength;
     }
 

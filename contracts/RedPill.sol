@@ -23,7 +23,7 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     address public SANTA_CONTRACT;
     address public GAINZ_CONTRACT;
 
-    uint256 public RED_PILL_PRICE = 450 * 10 ** 18;     // 1 RED PILL NFT = 450 $GAINZ
+    uint256 public RED_PILL_PRICE = 550 * 10 ** 18;     // 1 RED PILL NFT = 450 $GAINZ
 
     // Events
     event MintRedPill(address owner);
@@ -60,17 +60,13 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
         require(santaContract.isGameActive() == true, "Game is not active!");
         require(ownerOf(redPillId) == msg.sender, "NOT THE REDPILL OWNER!");
         require(santaContract.ownerOf(santaId) == msg.sender, "NOT SANTA OWNER!");
-
-        uint256 ownerPillCount = balanceOf(msg.sender);
-        require(ownerPillCount >= 1, "Red Pills required!");
-
-        Gainz gainzContract = Gainz(GAINZ_CONTRACT);
         // Other require's are done inside Gainz.sol/takeRedPill
 
         // Burn Red Pill
         burn(redPillId);
 
         // Tier-up the santa, GMI!
+        Gainz gainzContract = Gainz(GAINZ_CONTRACT);
         gainzContract.takeRedPill(santaId);
     }
 
@@ -114,7 +110,6 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     }
 
     // The following functions are overrides required by Solidity.
-
     function _beforeTokenTransfer(address from, address to, uint256 tokenId)
         internal
         override(ERC721, ERC721Enumerable)

@@ -8,14 +8,8 @@ import "./RedPillSanta.sol";
 contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     address public SANTA_CONTRACT;
 
-    // // $GAINZ price for per Red Pill NFT
-    // uint256 public RED_PILL_PRICE = 4000 * 10 ** decimals();
-
-    // // Required $GAINZ amount to win the game
-    // uint256 public CHEST_PRICE = 1_000_000 * 10 ** decimals();
-
     // Leveling cooldown period
-    uint32 public COOLDOWN_PERIOD = 1 days;
+    uint32 public LEVEL_COOLDOWN_PERIOD = 1 days;
 
     struct StakedSantaObj {
         // Current strength of the Santa
@@ -64,17 +58,17 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         uint32 currentTs = uint32(block.timestamp);
         uint32 rarity = 0;
 
-        if(strength == 8) {             // common
+        if(strength == 30) {             // common
             rarity = 1;
-        } else if(strength == 10){       // cool
+        } else if(strength == 90){       // cool
             rarity = 2;
-        } else if(strength == 15){       // rare
+        } else if(strength == 200){       // rare
             rarity = 3;
-        } else if(strength == 50){       // epic
+        } else if(strength == 300){       // epic
             rarity = 4;
-        } else if(strength == 200){      // legendary
+        } else if(strength == 400){      // legendary
             rarity = 5;
-        } else if(strength == 400){      // unique
+        } else if(strength == 500){      // unique
             rarity = 6;
         }
 
@@ -85,7 +79,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
             rarity,
             currentTs,
             uint48(0),
-            uint32(currentTs) + uint32(COOLDOWN_PERIOD)
+            uint32(currentTs) + uint32(LEVEL_COOLDOWN_PERIOD)
         );
 
         totalStakedSanta++;
@@ -220,24 +214,26 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
 
         require(santaContract.isGameActive() == true, "Game is not active!");
         require(santa.strength > 0, "Santa is not staked!");
-        require(santa.strength <= 50, "Santa is already at the max upgradeble tier");
+        require(santa.strength <= 300, "Santa is already at the max upgradeble tier");
         require(block.timestamp >= santa.coolDownTime, "Santa is on Cooldown");
 
         santa.pillsTaken++;
         uint256 currentStrength = santa.strength;
 
-        if(currentStrength == 8) {              // common -> cool
-            santa.strength  = 10;
-        } else if(currentStrength == 10){       // cool -> rare
-            santa.strength  = 15;
-        } else if(currentStrength == 15){       // rare -> epic
-            santa.strength  = 50;
-        } else if(currentStrength == 50){       // epic -> legendary
+        if(currentStrength == 30) {              // common -> cool
+            santa.strength  = 90;
+        } else if(currentStrength == 90){       // cool -> rare
             santa.strength  = 200;
+        } else if(currentStrength == 200){       // rare -> epic
+            santa.strength  = 300;
+        } else if(currentStrength == 300){       // epic -> legendary
+            santa.strength  = 400;
         } 
 
-        santa.coolDownTime = uint32(block.timestamp + COOLDOWN_PERIOD);
-        // Update santa parameters:
+        // Set the Cooldown end time
+        santa.coolDownTime = uint32(block.timestamp + LEVEL_COOLDOWN_PERIOD);
+
+        // Update Santa parameters:
         stakedSantas[tokenId] = santa;
         
         // Update total global strength value
@@ -250,21 +246,20 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         emit TierUp(tokenId, currentStrength, santa.strength);
    }
 
-    // Burns given amount of $GAINZ from sender's wallet
-   function _burnGainz (address sender, uint256 gainzAmount) internal {
-       require(balanceOf(sender) >= gainzAmount, "Not enough $GAINZ to burn!");
-       _burn(sender, gainzAmount);
+    // Burns given amount of $GAINZ from given account
+   function _burnGainz (address account, uint256 gainzAmount) internal {
+       require(balanceOf(account) >= gainzAmount, "Not enough $GAINZ to burn!");
+       _burn(account, gainzAmount);
 
        // Unleash the event
-       emit GainzBurned(sender, gainzAmount);
+       emit GainzBurned(account, gainzAmount);
    }
 
-   function burnGainz (address sender, uint256 gainzAmount) external onlyAuthorized {
-       _burnGainz(sender, gainzAmount);
+   function burnGainz (address account, uint256 gainzAmount) external onlyAuthorized {
+       _burnGainz(account, gainzAmount);
    }
 
     // Will be used to mint $GAINZ to holders on special occasions
-    // Will also be called by RedPill contract 
    function mintGainz(address _to, uint256 amount) external onlyAuthorized {
        _mint(_to, amount);
        emit GainzMinted(_to, amount);
@@ -283,7 +278,6 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
    }
 
     // Restores claimable $GAINZ for stakers specified with tokenId range
-    // Fundus are safu!
    function restoreUserGainz (uint256 _fromTokenId, uint256 _toTokenId) external onlyOwner {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
 
