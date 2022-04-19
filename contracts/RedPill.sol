@@ -24,7 +24,7 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     address public SANTA_CONTRACT;
     address public GAINZ_CONTRACT;
 
-    uint256 public RED_PILL_PRICE = 550 * 10 ** 18;     // 1 RED PILL NFT = 450 $GAINZ
+    uint256 public RED_PILL_PRICE = 550 * 10 ** 18;     // 1 RED PILL NFT = 550 $GAINZ
 
     // Events
     event MintRedPill(address owner, uint256 amount);

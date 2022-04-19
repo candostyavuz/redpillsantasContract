@@ -53,7 +53,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         require(msg.sender != address(0));
         require(_amount > 0, "Mint amount cannot be zero!");
         require(msg.value >= mintPrice * _amount, "Insufficient funds, ngmi.");
-        require(remainingSupply >= _amount, "Amount exceeds remaining supply!");
+        require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
         require(_amount < 21, "Max 20 Santas can be minted in one order!");
 
         uint256 ownerTokenCount = balanceOf(msg.sender);
@@ -202,6 +202,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     }
 
     function fundTheWinner (address payable winner) external onlyAuthorized {
+        require(isGameActive == true, "Game is not active!");
         require(address(this).balance != 0, "No funds!");
         require(msg.sender != address(0), "address 0 issue");
 

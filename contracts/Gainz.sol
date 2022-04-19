@@ -56,7 +56,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     event PrizeClaimed(address claimer, uint256 prizeAmount);
 
     constructor(address _santaContract) ERC20("GAINZ", "GAINZ") {
-        SANTA_CONTRACT = _santaContract;
+        setSantaContract(_santaContract);
     }
 
     // Santa Staking
@@ -281,10 +281,9 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
        _burnGainz(account, gainzAmount);
    }
 
-   function TheAvalanchePrize () external nonReentrant {
+   function TheAvalanchePrize() external nonReentrant {
        require(balanceOf(msg.sender) >= UNLOCK_AMOUNT, "NOT ENOUGH GAINZ TO CLAIM THE PRIZE");
        require(uint32(block.timestamp) >= winnerCooldowns[msg.sender], "WALLET HAS CLAIM COOLDOWN");
-       require(msg.sender != address(0), "ADDRESS ZERO ISSUE" );
 
        // Update claimer cooldown period
        winnerCooldowns[msg.sender] = uint32(block.timestamp + CLAIM_COOLDOWN_PERIOD);
@@ -316,6 +315,10 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
 
     function setClaimCooldown(uint256 value) external onlyOwner {
         CLAIM_COOLDOWN_PERIOD = value;
+    }
+
+    function setSantaContract(address _santaContract) public onlyOwner {
+        SANTA_CONTRACT = _santaContract;
     }
 
     // Mint $GAINZ to holders
