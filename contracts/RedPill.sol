@@ -2,10 +2,11 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";   // For Gainz.sol 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./Authorizable.sol";
 import "./RedPillSanta.sol";
 import "./Gainz.sol";
 
@@ -26,7 +27,7 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     uint256 public RED_PILL_PRICE = 550 * 10 ** 18;     // 1 RED PILL NFT = 450 $GAINZ
 
     // Events
-    event MintRedPill(address owner);
+    event MintRedPill(address owner, uint256 amount);
 
     constructor(address _santaContract, address _gainzContract, string memory _initBaseURI) ERC721("REDPILL", "REDPILL") {
         SANTA_CONTRACT = _santaContract;
@@ -35,24 +36,27 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     }
 
     // Swap $GAINZ with RedPill
-    function mintRedPill(address to) external nonReentrant {
+    function mintRedPill(uint256 _amount) external nonReentrant {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
         require(santaContract.isGameActive() == true, "Game is not active!");
 
         Gainz gainzContract = Gainz(GAINZ_CONTRACT);
         uint256 userGainzBalance = gainzContract.balanceOf(msg.sender);
-        require(userGainzBalance >= RED_PILL_PRICE, "Not enough $GAINZ");   
+        require(userGainzBalance >= RED_PILL_PRICE * _amount, "Not enough $GAINZ");   
+        require(_tokenIdCounter.current() + _amount <= MAX_PILLS,
+            "Amount exceeds remaining supply!");
 
         // Burn Gainz First
-        gainzContract.burnGainz(msg.sender, RED_PILL_PRICE);
+        gainzContract.burnGainz(msg.sender, RED_PILL_PRICE * _amount);
 
-        // Supply Red Pills
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
-
+        for (uint256 i = 0; i < _amount; i++) {
+            // Supply Red Pills
+            uint256 tokenId = _tokenIdCounter.current();
+            _tokenIdCounter.increment();
+            _safeMint(msg.sender, tokenId);
+        }
         // Unleash the event
-        emit MintRedPill(to);
+        emit MintRedPill(msg.sender, _amount);
     }
 
     function levelUp(uint256 santaId, uint256 redPillId) external nonReentrant {

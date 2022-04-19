@@ -3,13 +3,28 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./Authorizable.sol";
 import "./RedPillSanta.sol";
 
 contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     address public SANTA_CONTRACT;
 
+    // Required amount of $GAINZ to unlock the prize pool
+    uint256 public UNLOCK_AMOUNT = 10_000 * 10 ** decimals();
+    // Required $GAINZ increase rate for the next unlock
+    uint256 public UNLOCK_INCREASE_RATE = 5_000 * 10 ** decimals();
+
     // Leveling cooldown period
-    uint32 public LEVEL_COOLDOWN_PERIOD = 1 days;
+    uint256 public LEVEL_COOLDOWN_PERIOD = 1 days;
+
+    // Staking cooldown period
+    uint256 public STAKE_COOLDOWN_PERIOD = 1 days;
+ 
+    // Claim prize cooldown period
+    uint256 public CLAIM_COOLDOWN_PERIOD = 1 days;
+    // Mapping of winner wallets and their claim cooldown
+    mapping (address => uint32) public winnerCooldowns;
 
     struct StakedSantaObj {
         // Current strength of the Santa
@@ -22,7 +37,9 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         // # of Redpills taken
         uint48 pillsTaken;
         // Time until upgrading is allowed again
-        uint32 coolDownTime;
+        uint32 levelCoolDown;
+        // Time until staking is allowed again (occurs if wallet claims the Avalanche Prize)
+        uint32 stakeCoolDown;
     }
 
     mapping(uint256 => StakedSantaObj) public stakedSantas;
@@ -36,6 +53,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     event TierUp(uint256 tokenId, uint256 oldStrength, uint256 newStrength);
     event GainzMinted(address minter, uint256 amount);
     event GainzBurned(address minter, uint256 amount);
+    event PrizeClaimed(address claimer, uint256 prizeAmount);
 
     constructor(address _santaContract) ERC20("GAINZ", "GAINZ") {
         SANTA_CONTRACT = _santaContract;
@@ -54,6 +72,9 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         require(santaContract.ownerOf(tokenId) == msg.sender, "NOT OWNER!");
         require(stakedSantas[tokenId].strength == 0, "ALREADY STAKED!");
 
+        require(uint32(block.timestamp) >= stakedSantas[tokenId].stakeCoolDown, "Santa is on Stake Cooldown!");
+        require(uint32(block.timestamp) >= santaContract.tokenTransferCooldown(tokenId), "SANTA IS ON TRANSFER COOLDOWN!");
+
         uint256 strength = santaContract.tokenStrength(tokenId); // take base strength from the NFT contract
         uint32 currentTs = uint32(block.timestamp);
         uint32 rarity = 0;
@@ -62,9 +83,9 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
             rarity = 1;
         } else if(strength == 90){       // cool
             rarity = 2;
-        } else if(strength == 200){       // rare
+        } else if(strength == 200){      // rare
             rarity = 3;
-        } else if(strength == 300){       // epic
+        } else if(strength == 300){      // epic
             rarity = 4;
         } else if(strength == 400){      // legendary
             rarity = 5;
@@ -79,7 +100,8 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
             rarity,
             currentTs,
             uint48(0),
-            uint32(currentTs) + uint32(LEVEL_COOLDOWN_PERIOD)
+            uint32(currentTs) + uint32(LEVEL_COOLDOWN_PERIOD),  // Can't level up immediately
+            uint32(currentTs) + uint32(STAKE_COOLDOWN_PERIOD)   // Can't be staked again immediately
         );
 
         totalStakedSanta++;
@@ -112,7 +134,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         StakedSantaObj memory santa = stakedSantas[tokenId];
         if (santa.strength > 0) {
             uint256 gainzPerDay = (santa.strength * 10 ** decimals());  // TO BE UPDATED -> ADD INTERVALS !!!
-            uint256 daysPassed = (block.timestamp - santa.stakeBeginTime) / 1 days;
+            uint256 daysPassed = (uint32(block.timestamp) - santa.stakeBeginTime) / uint32(1 days);
             return gainzPerDay * daysPassed;
         } else {
             return 0;
@@ -208,14 +230,14 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
      -> Can't take RedPill if Cooldown period has not ended
      -> Can't take RedPill if Santa is already at the Legendary tier
     */
-   function takeRedPill(uint256 tokenId) external onlyAuthorized {
+   function takeRedPill(uint256 tokenId) external onlyAuthorized nonReentrant {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
         StakedSantaObj memory santa = stakedSantas[tokenId];
 
         require(santaContract.isGameActive() == true, "Game is not active!");
         require(santa.strength > 0, "Santa is not staked!");
         require(santa.strength <= 300, "Santa is already at the max upgradeble tier");
-        require(block.timestamp >= santa.coolDownTime, "Santa is on Cooldown");
+        require(uint32(block.timestamp) >= santa.levelCoolDown, "Santa is on level cooldown");
 
         santa.pillsTaken++;
         uint256 currentStrength = santa.strength;
@@ -231,7 +253,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         } 
 
         // Set the Cooldown end time
-        santa.coolDownTime = uint32(block.timestamp + LEVEL_COOLDOWN_PERIOD);
+        santa.levelCoolDown = uint32(block.timestamp + LEVEL_COOLDOWN_PERIOD);
 
         // Update Santa parameters:
         stakedSantas[tokenId] = santa;
@@ -259,7 +281,45 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
        _burnGainz(account, gainzAmount);
    }
 
-    // Will be used to mint $GAINZ to holders on special occasions
+   function TheAvalanchePrize () external nonReentrant {
+       require(balanceOf(msg.sender) >= UNLOCK_AMOUNT, "NOT ENOUGH GAINZ TO CLAIM THE PRIZE");
+       require(uint32(block.timestamp) >= winnerCooldowns[msg.sender], "WALLET HAS CLAIM COOLDOWN");
+       require(msg.sender != address(0), "ADDRESS ZERO ISSUE" );
+
+       // Update claimer cooldown period
+       winnerCooldowns[msg.sender] = uint32(block.timestamp + CLAIM_COOLDOWN_PERIOD);
+
+       // Burn $GAINZ
+       _burnGainz(msg.sender, UNLOCK_AMOUNT);
+
+       // Transfer funds to the winner
+       RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
+       santaContract.fundTheWinner(payable(msg.sender));
+
+   }
+
+   function setUnlockAmount(uint256 newAmount) public onlyOwner {
+       UNLOCK_AMOUNT = newAmount;
+   } 
+
+    function setUnlockIncreaseRate(uint256 newRate) public onlyOwner {
+       UNLOCK_INCREASE_RATE = newRate;
+   }
+
+    function setLevelCooldown(uint256 value) external onlyOwner {
+        LEVEL_COOLDOWN_PERIOD = value;
+    }
+
+    function setStakeCooldown(uint256 value) external onlyOwner {
+        STAKE_COOLDOWN_PERIOD = value;
+    }
+
+    function setClaimCooldown(uint256 value) external onlyOwner {
+        CLAIM_COOLDOWN_PERIOD = value;
+    }
+
+    // Mint $GAINZ to holders
+    // RPS contracts also call this
    function mintGainz(address _to, uint256 amount) external onlyAuthorized {
        _mint(_to, amount);
        emit GainzMinted(_to, amount);
@@ -278,7 +338,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
    }
 
     // Restores claimable $GAINZ for stakers specified with tokenId range
-   function restoreUserGainz (uint256 _fromTokenId, uint256 _toTokenId) external onlyOwner {
+   function restoreUserGainz(uint256 _fromTokenId, uint256 _toTokenId) external onlyOwner {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
 
         for(uint256 i = _fromTokenId; i <= _toTokenId; i++) {

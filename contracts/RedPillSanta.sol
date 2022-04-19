@@ -22,22 +22,30 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     uint256 public remainingSupply = MAX_SANTAS;
     uint256 public lastMintedTokenId;
 
-    address payable private stakeWallet;
     address payable private admin1;
     address payable private admin2;
     address payable private admin3;
+    address payable private prizePoolWallet;
 
     uint256 public gameStartTime;
     bool public isGameActive = false;
 
     mapping (uint256 => uint256) public tokenStrength;
 
-    constructor(string memory _initBaseURI, address payable _admin1, address payable _admin2, address payable _admin3 )
+    // If user transfers Santa into another wallet, Santas will go Cooldown
+    // During this CD period, NFTs won't be allowed to be staked and cannot yield $GAINZ
+    uint256 public TRANSFER_COOLDOWN_PERIOD = 1 days;
+    mapping (uint256 => uint32) public tokenTransferCooldown;
+
+    // Events
+    event PrizePoolFunded(uint amount);
+    event WinnerRewarded(address winner, uint256 amount);
+
+    constructor(string memory _initBaseURI, address payable _admin1, address payable _admin2, address payable _admin3 , address payable _prizePoolWallet)
         ERC721("REDPILLSANTA", "REDPILLSANTA")
     {
         setBaseURI(_initBaseURI);
-        setAdminAddress(_admin1, _admin2, _admin3);
-        gameStartTime = block.timestamp;
+        setAdminAddress(_admin1, _admin2, _admin3,_prizePoolWallet);
     }
 
     function claimSanta(uint256 _amount) public payable nonReentrant {
@@ -59,11 +67,10 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     }
 
     function distributeMintFee(uint256 _fee) private {
-        uint256 poolShare = (_fee * 30)/100;    // 30% of fees are added into the big prize pool
-        uint256 stakeShare = poolShare;          // 30% of fees are added into the stake wallet
-        (stakeWallet).transfer(stakeShare);
+        uint256 poolShare = (_fee * 60)/100;    // 60% of fees are added into the prize pool
+        (prizePoolWallet).transfer(poolShare);
 
-        uint256 perMemberShare = (_fee - poolShare - stakeShare)/3;
+        uint256 perMemberShare = (_fee - poolShare)/3;
         (admin1).transfer(perMemberShare);
         (admin2).transfer(perMemberShare);
         (admin3).transfer(perMemberShare);
@@ -182,30 +189,50 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         baseExtension = _baseExtension;
     }
 
-    function setAdminAddress (address payable _admin1, address payable _admin2, address payable _admin3) public onlyOwner {
+    function setAdminAddress (address payable _admin1, address payable _admin2, address payable _admin3, address payable _prizePoolWallet) public onlyOwner {
         admin1 = _admin1;
         admin2 = _admin2;
         admin3 = _admin3;
-    }
-
-    function setStakeAddress (address payable _stakeWallet) public onlyOwner {
-        stakeWallet = _stakeWallet;
+        prizePoolWallet = _prizePoolWallet;
     }
 
     function setGameActive (bool _state) public onlyOwner {
         isGameActive = _state;
+        gameStartTime = block.timestamp;
     }
 
-    function withdraw() external onlyOwner {
-        require(block.timestamp >= gameStartTime + 180 days, "The game still continues. Timelock is active!");   
-        payable(msg.sender).transfer(address(this).balance);
-        isGameActive = false;
+    function fundTheWinner (address payable winner) external onlyAuthorized {
+        require(address(this).balance != 0, "No funds!");
+        require(msg.sender != address(0), "address 0 issue");
+
+        uint256 prize = address(this).balance / 16;
+        (winner).transfer(prize);
+
+        emit WinnerRewarded(winner, prize);
+    }
+
+    function viewCurrentPrizePool() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    // Will be used to add funds into the Prize Pool
+    function addFunds() public payable onlyAuthorized {
+        emit PrizePoolFunded(msg.value);
     }
 
     function setStrength(uint256 tokenId, uint256 _newStrength) external onlyAuthorized {
         require(!paused, "Contract is paused!");
         require(_newStrength <= 400, "Maximum upgradable strength is 400!");
         tokenStrength[tokenId] = _newStrength;
+    }
+
+    function setTransferCooldown(uint256 _period) external onlyOwner() {
+        TRANSFER_COOLDOWN_PERIOD = _period;
+    }
+
+    function withdraw() external onlyOwner {
+        require(address(this).balance != 0, "no funds");
+        payable(msg.sender).transfer(address(this).balance);
     }
 
     // The following functions are overrides required by Solidity.
@@ -215,6 +242,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         uint256 tokenId
     ) internal override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
+        tokenTransferCooldown[tokenId] = uint32(block.timestamp + TRANSFER_COOLDOWN_PERIOD);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable, IERC165) returns (bool) {
