@@ -30,8 +30,8 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     event MintRedPill(address owner, uint256 amount);
 
     constructor(address _santaContract, address _gainzContract, string memory _initBaseURI) ERC721("REDPILL", "REDPILL") {
-        SANTA_CONTRACT = _santaContract;
-        GAINZ_CONTRACT = _gainzContract;
+        setSantaContract(_santaContract);
+        setGainzontract(_gainzContract);
         setBaseURI(_initBaseURI);
     }
 
@@ -100,6 +100,14 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     }
 
     // Only Owner functions
+    function setSantaContract(address _santaContract) public onlyOwner {
+        SANTA_CONTRACT = _santaContract;
+    }
+
+    function setGainzontract(address _gainzContract) public onlyOwner {
+        GAINZ_CONTRACT = _gainzContract;
+    }
+
     function setBaseURI(string memory _newBaseURI) public onlyOwner {
         _baseTokenURI = _newBaseURI;
     }
