@@ -1,5 +1,6 @@
 require("@nomiclabs/hardhat-waffle");
 require("dotenv").config();
+require("@nomiclabs/hardhat-etherscan");
 
 module.exports = {
   solidity: {
@@ -28,6 +29,11 @@ module.exports = {
       gasPrice: 225000000000,
       chainId: 43114,
       accounts: [process.env.PRIVATE_KEY]
-    }
+    },
   },
+  //  etherscan: {
+  //     // Your API key for Etherscan
+  //     // Obtain one at https://etherscan.io/
+  //     apiKey: [process.env.API_KEY]
+  //   }
 };
