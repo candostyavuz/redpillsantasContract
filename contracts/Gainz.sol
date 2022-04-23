@@ -70,7 +70,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
         require(santaContract.isGameActive() == true, "Game is not active!");
         require(santaContract.ownerOf(tokenId) == msg.sender, "NOT OWNER!");
-        require(stakedSantas[tokenId].strength == 0, "ALREADY STAKED!");
+        require(stakedSantas[tokenId].strength == 0, "ALREADY STAKED");
 
         require(uint32(block.timestamp) >= stakedSantas[tokenId].stakeCoolDown, "Santa is on Stake Cooldown!");
         require(uint32(block.timestamp) >= santaContract.tokenTransferCooldown(tokenId), "SANTA IS ON TRANSFER COOLDOWN!");

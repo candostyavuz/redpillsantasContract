@@ -11,14 +11,14 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     using Strings for uint256;
 
     // State Variables
-    uint256 public constant MAX_SANTAS = 4000;
+    uint256 public constant MAX_SANTAS = 50;
     string private _baseTokenURI;
     string public baseExtension = ".json";
     bool public paused = true;
     uint256 public mintPrice = 1.25 ether;  // 1.25 AVAX
-    uint256 public _royaltyAmount = 50;     // 5% royalty
+    uint256 public _royaltyAmount = 60;     // 6% royalty
 
-    uint256[4000] public remainingTokens;
+    uint256[MAX_SANTAS] public remainingTokens;
     uint256 public remainingSupply = MAX_SANTAS;
     uint256 public lastMintedTokenId;
 

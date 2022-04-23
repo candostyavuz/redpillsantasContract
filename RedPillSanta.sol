@@ -31,6 +31,7 @@ interface IERC165 {
 
 // File @openzeppelin/contracts/token/ERC721/IERC721.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/IERC721.sol)
 
 pragma solidity ^0.8.0;
@@ -175,6 +176,7 @@ interface IERC721 is IERC165 {
 
 // File @openzeppelin/contracts/token/ERC721/IERC721Receiver.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/IERC721Receiver.sol)
 
 pragma solidity ^0.8.0;
@@ -205,6 +207,7 @@ interface IERC721Receiver {
 
 // File @openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/extensions/IERC721Metadata.sol)
 
 pragma solidity ^0.8.0;
@@ -233,6 +236,7 @@ interface IERC721Metadata is IERC721 {
 
 // File @openzeppelin/contracts/utils/Address.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts (last updated v4.5.0) (utils/Address.sol)
 
 pragma solidity ^0.8.1;
@@ -458,6 +462,7 @@ library Address {
 
 // File @openzeppelin/contracts/utils/Context.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 
 pragma solidity ^0.8.0;
@@ -485,6 +490,7 @@ abstract contract Context {
 
 // File @openzeppelin/contracts/utils/Strings.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts v4.4.1 (utils/Strings.sol)
 
 pragma solidity ^0.8.0;
@@ -555,6 +561,7 @@ library Strings {
 
 // File @openzeppelin/contracts/utils/introspection/ERC165.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/ERC165.sol)
 
 pragma solidity ^0.8.0;
@@ -585,6 +592,7 @@ abstract contract ERC165 is IERC165 {
 
 // File @openzeppelin/contracts/token/ERC721/ERC721.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts (last updated v4.5.0) (token/ERC721/ERC721.sol)
 
 pragma solidity ^0.8.0;
@@ -1033,6 +1041,7 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
 
 // File @openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts (last updated v4.5.0) (token/ERC721/extensions/IERC721Enumerable.sol)
 
 pragma solidity ^0.8.0;
@@ -1063,6 +1072,7 @@ interface IERC721Enumerable is IERC721 {
 
 // File @openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/extensions/ERC721Enumerable.sol)
 
 pragma solidity ^0.8.0;
@@ -1227,6 +1237,7 @@ abstract contract ERC721Enumerable is ERC721, IERC721Enumerable {
 
 // File @openzeppelin/contracts/security/ReentrancyGuard.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts v4.4.1 (security/ReentrancyGuard.sol)
 
 pragma solidity ^0.8.0;
@@ -1293,6 +1304,7 @@ abstract contract ReentrancyGuard {
 
 // File @openzeppelin/contracts/interfaces/IERC165.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts v4.4.1 (interfaces/IERC165.sol)
 
 pragma solidity ^0.8.0;
@@ -1300,6 +1312,7 @@ pragma solidity ^0.8.0;
 
 // File @openzeppelin/contracts/interfaces/IERC2981.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts (last updated v4.5.0) (interfaces/IERC2981.sol)
 
 pragma solidity ^0.8.0;
@@ -1326,6 +1339,7 @@ interface IERC2981 is IERC165 {
 
 // File @openzeppelin/contracts/access/Ownable.sol@v4.5.0
 
+  
 // OpenZeppelin Contracts v4.4.1 (access/Ownable.sol)
 
 pragma solidity ^0.8.0;
@@ -1403,6 +1417,7 @@ abstract contract Ownable is Context {
 
 // File contracts/Authorizable.sol
 
+  
 pragma solidity ^0.8.4;
 
 contract Authorizable is Ownable {
@@ -1430,6 +1445,7 @@ contract Authorizable is Ownable {
 
 // File contracts/RedPillSanta.sol
 
+  
 pragma solidity ^0.8.4;
 
 
@@ -1440,14 +1456,14 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     using Strings for uint256;
 
     // State Variables
-    uint256 public constant MAX_SANTAS = 4000;
+    uint256 public constant MAX_SANTAS = 50;
     string private _baseTokenURI;
     string public baseExtension = ".json";
     bool public paused = true;
     uint256 public mintPrice = 1.25 ether;  // 1.25 AVAX
-    uint256 public _royaltyAmount = 50;     // 5% royalty
+    uint256 public _royaltyAmount = 60;     // 6% royalty
 
-    uint256[4000] public remainingTokens;
+    uint256[MAX_SANTAS] public remainingTokens;
     uint256 public remainingSupply = MAX_SANTAS;
     uint256 public lastMintedTokenId;
 
