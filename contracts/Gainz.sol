@@ -112,10 +112,10 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     }
 
     // Returns all of the user's staked santa IDs
-    function stakedSantasOfOwner() public view returns (uint256[] memory stakedIDs, uint256 stakedCount)
+    function stakedSantasOfOwner(address sender) public view returns (uint256[] memory stakedIDs, uint256 stakedCount)
     {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
-        uint256[] memory ownerSantaIDs = santaContract.tokensOfOwner(msg.sender);
+        uint256[] memory ownerSantaIDs = santaContract.tokensOfOwner(sender);
         stakedIDs = new uint256[](ownerSantaIDs.length);
 
         stakedCount = 0;
@@ -130,21 +130,22 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     }
 
     // Returns the amount of $GAINZ earned by a specific Santa
-    function viewEarnedGainz(uint256 tokenId) public view returns (uint256) {
+   function viewEarnedGainz(uint256 tokenId) public view returns (uint256) {
         StakedSantaObj memory santa = stakedSantas[tokenId];
         if (santa.strength > 0) {
             uint256 gainzPerDay = (santa.strength * 10 ** decimals());  // TO BE UPDATED -> ADD INTERVALS !!!
-            uint256 daysPassed = (uint32(block.timestamp) - santa.stakeBeginTime) / uint32(1 days);
-            return gainzPerDay * daysPassed;
+            uint256 secondsPassed = block.timestamp - santa.stakeBeginTime;
+            return secondsPassed * (gainzPerDay / 86400);
         } else {
             return 0;
         }
     }
 
     // Returns the amount of $GAINZ earned by ALL Santas of the sender
-    function viewAllEarnedGainz() public view returns (uint256) {
+    function viewAllEarnedGainz(address sender) public view returns (uint256) {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
-        uint256[] memory ownerSantaIDs = santaContract.tokensOfOwner(msg.sender);
+        uint256[] memory ownerSantaIDs = santaContract.tokensOfOwner(sender);
+        require(ownerSantaIDs.length > 0 , "Sender has no Santas!");
         uint256 totalGainzEarned = 0;
         for (uint256 i = 0; i < ownerSantaIDs.length; i++) {
             StakedSantaObj memory santa = stakedSantas[ownerSantaIDs[i]];
