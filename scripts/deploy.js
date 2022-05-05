@@ -4,7 +4,7 @@ const hre = require("hardhat");
 async function main() {
 
   let baseURI = "ipfs://QmcfmJdaiAU5fcyqRCgzGPCnKdFayVV42Zm7A8FVLRSTSG/";
-  let baseURI_RP = "ipfs://QmS2Cj7Y7974Q9sU7nq6WdAxYpLioeEQXHayiMeNTmxvPT/"
+  let baseURI_RP = "ipfs://QmW4cwnHMevogq1iGX5dJykwYRo5ePE2hxbVP9KADrXo6Y/"
   let admin1 = "0xb4d2dfE07DF99959Cd2EdB98aab8455c69b612aA";
   let admin2 = "0x7f6bD981aEA0646771ff2e1F9B642E3C7F9e7741";
   let admin3 = "0x212c8469e64811B3c1D478a2176C17Aa58166E51";

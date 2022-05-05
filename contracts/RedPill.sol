@@ -17,7 +17,7 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     // State Variables
     Counters.Counter private _tokenIdCounter;
 
-    uint256 public constant MAX_PILLS = 50; // This will change after the final collection is settled
+    uint256 public constant MAX_PILLS = 11817;
     string private _baseTokenURI; 
     string public baseExtension = ".json";
     
@@ -61,7 +61,6 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
 
     function levelUp(uint256 santaId, uint256 redPillId) external nonReentrant {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
-        require(santaContract.isGameActive() == true, "Game is not active!");
         require(ownerOf(redPillId) == msg.sender, "NOT THE REDPILL OWNER!");
         require(santaContract.ownerOf(santaId) == msg.sender, "NOT SANTA OWNER!");
         // Other require's are done inside Gainz.sol/takeRedPill
@@ -100,6 +99,15 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     }
 
     // Only Owner functions
+    function airDropRedPill(address _to, uint256 _amount) external onlyOwner {
+        require(_tokenIdCounter.current() + _amount <= MAX_PILLS, "Amount exceeds remaining supply!");
+        for (uint256 i = 0; i < _amount; i++) {
+            uint256 tokenId = _tokenIdCounter.current();
+            _tokenIdCounter.increment();
+             _safeMint(_to, tokenId);
+        }
+    }
+
     function setSantaContract(address _santaContract) public onlyOwner {
         SANTA_CONTRACT = _santaContract;
     }

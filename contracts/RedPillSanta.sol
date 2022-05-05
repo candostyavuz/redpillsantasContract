@@ -11,7 +11,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     using Strings for uint256;
 
     // State Variables
-    uint256 public constant MAX_SANTAS = 50;
+    uint256 public constant MAX_SANTAS = 4000;
     string private _baseTokenURI;
     string public baseExtension = ".json";
     bool public paused = true;
@@ -31,11 +31,6 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     bool public isGameActive = false;
 
     mapping (uint256 => uint256) public tokenStrength;
-
-    // If user transfers Santa into another wallet, Santas will go Cooldown
-    // During this CD period, NFTs won't be allowed to be staked and cannot yield $GAINZ
-    uint256 public TRANSFER_COOLDOWN_PERIOD = 1 days;
-    mapping (uint256 => uint32) public tokenTransferCooldown;
 
     // Events
     event PrizePoolFunded(uint amount);
@@ -206,7 +201,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         require(address(this).balance != 0, "No funds!");
         require(msg.sender != address(0), "address 0 issue");
 
-        uint256 prize = address(this).balance / 16;
+        uint256 prize = address(this).balance / 8;
         (winner).transfer(prize);
 
         emit WinnerRewarded(winner, prize);
@@ -227,10 +222,6 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         tokenStrength[tokenId] = _newStrength;
     }
 
-    function setTransferCooldown(uint256 _period) external onlyOwner() {
-        TRANSFER_COOLDOWN_PERIOD = _period;
-    }
-
     function withdraw() external onlyOwner {
         require(address(this).balance != 0, "no funds");
         payable(msg.sender).transfer(address(this).balance);
@@ -243,7 +234,6 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         uint256 tokenId
     ) internal override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
-        tokenTransferCooldown[tokenId] = uint32(block.timestamp + TRANSFER_COOLDOWN_PERIOD);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable, IERC165) returns (bool) {
