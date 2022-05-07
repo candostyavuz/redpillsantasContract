@@ -16,9 +16,10 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     string public baseExtension = ".json";
     bool public paused = true;
     uint256 public mintPrice = 1.25 ether;  // 1.25 AVAX
+    uint256 public wlMintPrice = 1 ether;   // 1 AVAX
     uint256 public _royaltyAmount = 60;     // 6% royalty
 
-    uint256[MAX_SANTAS] public remainingTokens;
+    uint256[4000] public remainingTokens;
     uint256 public remainingSupply = MAX_SANTAS;
     uint256 public lastMintedTokenId;
 
@@ -31,6 +32,12 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     bool public isGameActive = false;
 
     mapping (uint256 => uint256) public tokenStrength;
+
+    // Free Mint
+    mapping(address => uint256) public freeMintAddress; // Mapping for giveaway winners and earned amount
+
+    // Whitelist
+    mapping(address => uint256) public whiteListAddress;    // Mapping for whitelist winners and WL mint limit
 
     // Events
     event PrizePoolFunded(uint amount);
@@ -45,20 +52,62 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
 
     function claimSanta(uint256 _amount) public payable nonReentrant {
         require(!paused, "Minting is paused!");
-        require(msg.sender != address(0));
+        require(msg.sender != address(0), "Address zero issue!");
         require(_amount > 0, "Mint amount cannot be zero!");
-        require(msg.value >= mintPrice * _amount, "Insufficient funds, ngmi.");
-        require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
+        require(msg.value >= mintPrice * _amount, "Insufficient funds");
+        // require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
         require(_amount < 21, "Max 20 Santas can be minted in one order!");
 
-        uint256 ownerTokenCount = balanceOf(msg.sender);
-        require(ownerTokenCount <= 250, "Max 250 Santas are allowed per wallet!");
+        uint256 mintAmount;
+        if(_amount >= 5) {
+            mintAmount = _amount + 2; 
+        } else if(_amount >= 3) {
+             mintAmount = _amount + 1;
+        } else {
+            mintAmount = _amount;
+        }
+        require(remainingSupply >= mintAmount, "Amount exceeds the remaining supply!");
+
+
+        for (uint256 i = 0; i < mintAmount; i++) {
+            lastMintedTokenId = _mintRandomID(msg.sender);
+            setBaseStrength(msg.sender, lastMintedTokenId);
+        }
+        distributeMintFee(msg.value);
+    }
+
+    function whiteListMint(uint256 _amount) public payable nonReentrant {
+        require(!paused, "Minting is paused!");
+        require(msg.sender != address(0), "Address zero issue!");
+        require(_amount > 0, "Mint amount cannot be zero!");
+        require(msg.value >= wlMintPrice * _amount, "Insufficient funds, ngmi.");
+        // require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
+        require(whiteListAddress[msg.sender] >= _amount, "Amount exceeds user's whitelist minting limit!");
+        require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
+
 
         for (uint256 i = 0; i < _amount; i++) {
             lastMintedTokenId = _mintRandomID(msg.sender);
             setBaseStrength(msg.sender, lastMintedTokenId);
         }
         distributeMintFee(msg.value);
+
+        whiteListAddress[msg.sender] = whiteListAddress[msg.sender] - (_amount);
+    }
+
+    function freeMint(uint256 _amount) public nonReentrant {
+        require(!paused, "Minting is paused!");
+        require(msg.sender != address(0), "Address zero issue!");
+        require(_amount > 0, "Mint amount cannot be zero!");
+        require(freeMintAddress[msg.sender] >= _amount, "Amount exceeds user's free mint limit!");
+        require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
+
+        for (uint256 i = 0; i < _amount; i++) {
+            lastMintedTokenId = _mintRandomID(msg.sender);
+            setBaseStrength(msg.sender, lastMintedTokenId);
+        }
+
+        freeMintAddress[msg.sender] = freeMintAddress[msg.sender] - (_amount);
     }
 
     function distributeMintFee(uint256 _fee) private {
@@ -163,7 +212,24 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         }
     }
 
+    function whitelistLeft(address user) public view returns(uint256){
+        return whiteListAddress[user];
+    }
+
+    function freeMintLeft(address user) public view returns(uint256){
+        return freeMintAddress[user];
+    }
+
     // Only Owner functions
+    function setWhitelist(address[] calldata _wallets) external onlyOwner {
+        for (uint i = 0; i < _wallets.length; i++) {
+            whiteListAddress[_wallets[i]] = 4;
+        }
+    }
+
+    function setFreeMint(address _wallet, uint256 _amount) external onlyOwner {
+        freeMintAddress[_wallet] = _amount;
+    }
 
     function setRoyaltyAmount(uint256 number) external onlyOwner {
         _royaltyAmount = number;
