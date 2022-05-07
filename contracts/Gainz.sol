@@ -14,7 +14,6 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     uint256 public UNLOCK_AMOUNT = 10_000 * 10 ** decimals();
     // Required $GAINZ increase rate for the next unlock
     uint256 public UNLOCK_INCREASE_RATE = 5_000 * 10 ** decimals();
-
     // Leveling cooldown period
     uint256 public LEVEL_COOLDOWN_PERIOD = 1 days;
 

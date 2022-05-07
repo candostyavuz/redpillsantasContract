@@ -60,14 +60,11 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
 
         uint256 mintAmount;
         if(_amount >= 5) {
-            mintAmount = _amount + 2; 
-        } else if(_amount >= 3) {
-             mintAmount = _amount + 1;
+            mintAmount = _amount + (_amount/5); 
         } else {
             mintAmount = _amount;
         }
         require(remainingSupply >= mintAmount, "Amount exceeds the remaining supply!");
-
 
         for (uint256 i = 0; i < mintAmount; i++) {
             lastMintedTokenId = _mintRandomID(msg.sender);
@@ -84,7 +81,6 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         // require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
         require(whiteListAddress[msg.sender] >= _amount, "Amount exceeds user's whitelist minting limit!");
         require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
-
 
         for (uint256 i = 0; i < _amount; i++) {
             lastMintedTokenId = _mintRandomID(msg.sender);
@@ -241,6 +237,9 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     function setPrice(uint _newPrice) external onlyOwner {
         mintPrice = _newPrice;
     }
+    function setWLPrice(uint _newPrice) external onlyOwner {
+        wlMintPrice = _newPrice;
+    }
 
     function pause(bool _state) public onlyOwner {
         paused = _state;
@@ -264,11 +263,16 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
 
     function fundTheWinner (address payable winner) external onlyAuthorized {
         require(isGameActive == true, "Game is not active!");
-        require(address(this).balance != 0, "No funds!");
+        require(address(this).balance < 0.5 ether, "No funds!");
         require(msg.sender != address(0), "address 0 issue");
 
         uint256 prize = address(this).balance / 8;
-        (winner).transfer(prize);
+
+        if(prize <= 0.5 ether){
+            (winner).transfer(0.5 ether);
+        } else {
+            (winner).transfer(prize);
+        }
 
         emit WinnerRewarded(winner, prize);
     }
