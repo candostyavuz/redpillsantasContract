@@ -263,7 +263,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
 
     function fundTheWinner (address payable winner) external onlyAuthorized {
         require(isGameActive == true, "Game is not active!");
-        require(address(this).balance < 0.5 ether, "No funds!");
+        require(address(this).balance >= 0.5 ether, "No funds!");
         require(msg.sender != address(0), "address 0 issue");
 
         uint256 prize = address(this).balance / 8;

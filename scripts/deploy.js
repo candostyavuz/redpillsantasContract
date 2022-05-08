@@ -3,8 +3,8 @@ const hre = require("hardhat");
 
 async function main() {
 
-  let baseURI = "ipfs://QmcfmJdaiAU5fcyqRCgzGPCnKdFayVV42Zm7A8FVLRSTSG/";
-  let baseURI_RP = "ipfs://QmW4cwnHMevogq1iGX5dJykwYRo5ePE2hxbVP9KADrXo6Y/"
+  let baseURI = "ipfs://QmUBkWy23dRTb5UUSi6qn6mpApxmj88a1RP9AYstrUtaJv/";
+  let baseURI_RP = "ipfs://QmUMrcqoLDsEPrZY3qYD43Rqid3eyAeXQRFjc8B5UXBVv7/"
   let admin1 = "0xb4d2dfE07DF99959Cd2EdB98aab8455c69b612aA";
   let admin2 = "0x7f6bD981aEA0646771ff2e1F9B642E3C7F9e7741";
   let admin3 = "0x212c8469e64811B3c1D478a2176C17Aa58166E51";
