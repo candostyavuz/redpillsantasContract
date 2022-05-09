@@ -98,6 +98,10 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
         return bytes(currentBaseURI).length > 0 ? string(abi.encodePacked(currentBaseURI, tokenId.toString(), baseExtension)): "";
     }
 
+    function getCurrentTokenId() public view returns (uint256) {
+        return _tokenIdCounter.current();
+    }
+
     // Only Owner functions
     function airDropRedPill(address _to, uint256 _amount) external onlyOwner {
         require(_tokenIdCounter.current() + _amount <= MAX_PILLS, "Amount exceeds remaining supply!");
