@@ -241,7 +241,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         wlMintPrice = _newPrice;
     }
 
-    function pause(bool _state) public onlyOwner {
+    function setPaused(bool _state) public onlyOwner {
         paused = _state;
     }
 

@@ -17,6 +17,8 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     // State Variables
     Counters.Counter private _tokenIdCounter;
 
+    bool public paused = true;
+
     uint256 public constant MAX_PILLS = 11817;
     string private _baseTokenURI; 
     string public baseExtension = ".json";
@@ -37,6 +39,8 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
 
     // Swap $GAINZ with RedPill
     function mintRedPill(uint256 _amount) external nonReentrant {
+        require(!paused, "RP minting is paused!");
+
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
         require(santaContract.isGameActive() == true, "Game is not active!");
 
@@ -110,6 +114,10 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
             _tokenIdCounter.increment();
              _safeMint(_to, tokenId);
         }
+    }
+
+    function setPaused(bool _state) public onlyOwner {
+        paused = _state;
     }
 
     function setSantaContract(address _santaContract) public onlyOwner {
