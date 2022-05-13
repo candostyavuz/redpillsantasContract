@@ -19,6 +19,8 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     uint256 public wlMintPrice = 1 ether;   // 1 AVAX
     uint256 public _royaltyAmount = 60;     // 6% royalty
 
+    uint256 public prizeDenominator = 8;    // Percentage of funds for the winner
+
     uint256[4000] public remainingTokens;
     uint256 public remainingSupply = MAX_SANTAS;
     uint256 public lastMintedTokenId;
@@ -261,12 +263,16 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         gameStartTime = block.timestamp;
     }
 
+    function setPrizeDenominatr(uint256 _denominator) external onlyOwner {
+        prizeDenominator = _denominator;
+    }
+
     function fundTheWinner (address payable winner) external onlyAuthorized {
         require(isGameActive == true, "Game is not active!");
         require(address(this).balance >= 0.5 ether, "No funds!");
         require(msg.sender != address(0), "address 0 issue");
 
-        uint256 prize = address(this).balance / 8;
+        uint256 prize = address(this).balance / prizeDenominator;
 
         if(prize <= 0.5 ether){
             (winner).transfer(0.5 ether);
