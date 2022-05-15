@@ -226,7 +226,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     }
 
     function setFreeMint(address _wallet, uint256 _amount) external onlyOwner {
-        freeMintAddress[_wallet] = _amount;
+        freeMintAddress[_wallet] += _amount;
     }
 
     function setRoyaltyAmount(uint256 number) external onlyOwner {
