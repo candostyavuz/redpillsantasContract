@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-const redPillSantaAddress = "0x0B063846F79f4310cAB54B784d3301Cb8428Bdda"
+const redPillSantaAddress = "0x3b79722171FD22b2820a74D243446420B587ed0c"
 
 const addresses = [
     "0x3A766f2978cFC31Af8a5Ef3A63C3C4842215B3cd",
@@ -58,7 +58,8 @@ async function main() {
 
     const santaContract = await hre.ethers.getContractAt("RedPillSanta", redPillSantaAddress);
 
-    await santaContract.connect(owner).setWhitelist(addresses);
+    const transaction = await santaContract.connect(owner).setWhitelist(addresses);
+    await transaction.wait();
 
 }
 

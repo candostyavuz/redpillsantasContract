@@ -17,7 +17,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     bool public paused = true;
     uint256 public mintPrice = 1.25 ether;  // 1.25 AVAX
     uint256 public wlMintPrice = 1 ether;   // 1 AVAX
-    uint256 public _royaltyAmount = 60;     // 6% royalty
+    uint256 public _royaltyAmount = 50;     // 5% royalty
 
     uint256 public prizeDenominator = 8;    // Percentage of funds for the winner
 

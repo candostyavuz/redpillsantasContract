@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-const redPillSantaAddress = "0x0B063846F79f4310cAB54B784d3301Cb8428Bdda"
+const redPillSantaAddress = "0x3b79722171FD22b2820a74D243446420B587ed0c"
 
 const addresses = [
     "0x5336A16cDD3C7A9f37f38674cc45cdF98A69DB7e",
@@ -55,7 +55,9 @@ async function main() {
 
     for(let i = 0; i <addresses.length; i++) {
 
-        await santaContract.connect(owner).setFreeMint(addresses[i], amount);
+        const transaction = await santaContract.connect(owner).setFreeMint(addresses[i], amount);
+        await transaction.wait();
+
         console.log("freemint given to: " + addresses[i])
     }
 }
