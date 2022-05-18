@@ -17,7 +17,6 @@ const addresses = [
     "0x5007B53757858b7C378Dd109BaEED2a35df3fAe6",
     "0x8B1Ab082f74B46c1D41d52d1f561258e3535f8Fa",
     "0xb5EB9d314716Fb533dB7d9886dbd1Ab58Ad6973E",
-    "0xb4d2dfE07DF99959Cd2EdB98aab8455c69b612aA"
 ]
 
 async function main() {
@@ -25,8 +24,7 @@ async function main() {
     const rpContract = await hre.ethers.getContractAt("RedPill", redPillAddress);
 
     for(let i = 0; i <addresses.length; i++) {
-        let count = addresses.filter(x => x == addresses[i]).length;
-        const transaction = await rpContract.connect(owner).airDropRedPill(addresses[i], count);
+        const transaction = await rpContract.connect(owner).airDropRedPill(addresses[i], 1);
         await transaction.wait();
         console.log("redpill airdropped to: " + addresses[i])
     }

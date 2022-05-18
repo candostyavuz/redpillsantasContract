@@ -5,12 +5,14 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./Authorizable.sol";
 import "./RedPillSanta.sol";
 import "./Gainz.sol";
 
-contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, ReentrancyGuard {
+contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, ReentrancyGuard, IERC2981 {
     using Counters for Counters.Counter;
     using Strings for uint256;
 
@@ -22,7 +24,8 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     uint256 public constant MAX_PILLS = 11817;
     string private _baseTokenURI; 
     string public baseExtension = ".json";
-    
+    uint256 public _royaltyAmount = 50;     // 5% royalty
+
     address public SANTA_CONTRACT;
     address public GAINZ_CONTRACT;
 
@@ -106,6 +109,11 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
         return _tokenIdCounter.current();
     }
 
+    function royaltyInfo(uint256 tokenId, uint256 salePrice) external view override returns (address receiver, uint256 royaltyAmount){
+        if(tokenId >= 0 && tokenId < 11817) {
+            return (owner(), salePrice * (_royaltyAmount)/1000);
+        }
+    }
     // Only Owner functions
     function airDropRedPill(address _to, uint256 _amount) external onlyOwner {
         require(_tokenIdCounter.current() + _amount <= MAX_PILLS, "Amount exceeds remaining supply!");
@@ -141,6 +149,10 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
         RED_PILL_PRICE = _newPrice * 10 ** 18;
     }
 
+    function setRoyaltyAmount(uint256 number) external onlyOwner {
+        _royaltyAmount = number;
+    }
+
     // The following functions are overrides required by Solidity.
     function _beforeTokenTransfer(address from, address to, uint256 tokenId)
         internal
@@ -152,9 +164,9 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721Enumerable)
+        override(ERC721, ERC721Enumerable, IERC165)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+        return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
     }
 }
