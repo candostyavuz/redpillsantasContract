@@ -12,8 +12,6 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
 
     // Required amount of $GAINZ to unlock the prize pool
     uint256 public UNLOCK_AMOUNT = 10_000 * 10 ** decimals();
-    // Required $GAINZ increase rate for the next unlock
-    uint256 public UNLOCK_INCREASE_RATE = 5_000 * 10 ** decimals();
     // Leveling cooldown period
     uint256 public LEVEL_COOLDOWN_PERIOD = 1 days;
 
@@ -147,7 +145,6 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     // Mints earned amount of $GAINZ to sender's wallet
     function _claimGainz(uint256[] calldata tokenIDs) internal {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
-        require(santaContract.isGameActive() == true, "Game is not active!");
         uint256 totalGainzEarned = 0;
 
         for (uint256 i = 0; i < tokenIDs.length; i++) {
@@ -220,7 +217,6 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
         RedPillSanta santaContract = RedPillSanta(SANTA_CONTRACT);
         StakedSantaObj memory santa = stakedSantas[tokenId];
 
-        require(santaContract.isGameActive() == true, "Game is not active!");
         require(santa.strength > 0, "Santa is not staked!");
         require(santa.strength <= 300, "Santa is already at the max upgradeble tier");
         require(uint32(block.timestamp) >= santa.levelCoolDown, "Santa is on level cooldown");
@@ -282,10 +278,6 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
    function setUnlockAmount(uint256 newAmount) public onlyOwner {
        UNLOCK_AMOUNT = newAmount;
    } 
-
-    function setUnlockIncreaseRate(uint256 newRate) public onlyOwner {
-       UNLOCK_INCREASE_RATE = newRate;
-   }
 
     function setLevelCooldown(uint256 value) external onlyOwner {
         LEVEL_COOLDOWN_PERIOD = value;

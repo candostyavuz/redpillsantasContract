@@ -18,6 +18,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     uint256 public mintPrice = 1.25 ether;  // 1.25 AVAX
     uint256 public wlMintPrice = 1 ether;   // 1 AVAX
     uint256 public _royaltyAmount = 50;     // 5% royalty
+    uint256 public _belowFloorRoyaltyAmount = 250;     // 25% royalty
 
     uint256 public prizeDenominator = 8;    // Percentage of funds for the winner
 
@@ -32,6 +33,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
 
     uint256 public gameStartTime;
     bool public isGameActive = false;
+    bool public isGameSessionActive = false;
 
     mapping (uint256 => uint256) public tokenStrength;
 
@@ -58,7 +60,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         require(_amount > 0, "Mint amount cannot be zero!");
         require(msg.value >= mintPrice * _amount, "Insufficient funds");
         // require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
-        require(_amount < 21, "Max 20 Santas can be minted in one order!");
+        require(_amount <= 20, "Max 20 Santas can be minted in one order!");
 
         uint256 mintAmount;
         if(_amount >= 5) {
@@ -82,9 +84,17 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         require(msg.value >= wlMintPrice * _amount, "Insufficient funds, ngmi.");
         // require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
         require(whiteListAddress[msg.sender] >= _amount, "Amount exceeds user's whitelist minting limit!");
-        require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
 
-        for (uint256 i = 0; i < _amount; i++) {
+        uint256 mintAmount;
+        if(_amount >= 5) {
+            mintAmount = _amount + (_amount/5); 
+        } else {
+            mintAmount = _amount;
+        }
+
+        require(remainingSupply >= mintAmount, "Amount exceeds the remaining supply!");
+
+        for (uint256 i = 0; i < mintAmount; i++) {
             lastMintedTokenId = _mintRandomID(msg.sender);
             setBaseStrength(msg.sender, lastMintedTokenId);
         }
@@ -203,10 +213,14 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     }
 
     function royaltyInfo(uint256 tokenId, uint256 salePrice) external view override returns (address receiver, uint256 royaltyAmount){
-        if(tokenId >= 0 && tokenId < 13) {
-            return (owner(), salePrice * (_royaltyAmount+10)/1000);
+        if(salePrice <= mintPrice) {
+            return (owner(), salePrice * (_belowFloorRoyaltyAmount)/1000);
         } else {
-            return (owner(), salePrice * (_royaltyAmount)/1000);
+            if(tokenId >= 0 && tokenId < 13) {
+                return (owner(), salePrice * (_royaltyAmount+10)/1000);
+            } else {
+                return (owner(), salePrice * (_royaltyAmount)/1000);
+            }
         }
     }
 
@@ -221,7 +235,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     // Only Owner functions
     function setWhitelist(address[] calldata _wallets) external onlyOwner {
         for (uint i = 0; i < _wallets.length; i++) {
-            whiteListAddress[_wallets[i]] = 4;
+            whiteListAddress[_wallets[i]] = 5;
         }
     }
 
@@ -229,9 +243,11 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         freeMintAddress[_wallet] += _amount;
     }
 
-    function setRoyaltyAmount(uint256 number) external onlyOwner {
+    function setRoyaltyAmount(uint256 number, uint256 belowFloorNumber) external onlyOwner {
         _royaltyAmount = number;
+        _belowFloorRoyaltyAmount = belowFloorNumber;
     }
+    
     function setBaseURI(string memory _newBaseURI) public onlyOwner {
         _baseTokenURI = _newBaseURI;
     }
@@ -263,12 +279,17 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         gameStartTime = block.timestamp;
     }
 
+    function setisGameSessionActive (bool _state) public onlyOwner {
+        isGameSessionActive = _state;
+    }
+
     function setPrizeDenominatr(uint256 _denominator) external onlyOwner {
         prizeDenominator = _denominator;
     }
 
     function fundTheWinner (address payable winner) external onlyAuthorized {
         require(isGameActive == true, "Game is not active!");
+        require(isGameSessionActive == true, "Game session is not active!");
         require(address(this).balance >= 0.5 ether, "No funds!");
         require(msg.sender != address(0), "address 0 issue");
 
@@ -293,7 +314,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     }
 
     function setStrength(uint256 tokenId, uint256 _newStrength) external onlyAuthorized {
-        require(!paused, "Contract is paused!");
+        require(isGameActive == true, "Game is not active!");
         require(_newStrength <= 400, "Maximum upgradable strength is 400!");
         tokenStrength[tokenId] = _newStrength;
     }
