@@ -38,10 +38,10 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     mapping (uint256 => uint256) public tokenStrength;
 
     // Free Mint
-    mapping(address => uint256) public freeMintAddress; // Mapping for giveaway winners and earned amount
+    mapping(address => uint256) public freeMintAddress;  // Mapping for giveaway winners and earned amount
 
     // Whitelist
-    mapping(address => uint256) public whiteListAddress;    // Mapping for whitelist winners and WL mint limit
+    mapping(address => uint256) public whiteListAddress; // Mapping for whitelist winners and WL mint limit
 
     // Events
     event PrizePoolFunded(uint amount);
@@ -70,10 +70,13 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         }
         require(remainingSupply >= mintAmount, "Amount exceeds the remaining supply!");
 
+        uint256 tokenId = lastMintedTokenId;
         for (uint256 i = 0; i < mintAmount; i++) {
-            lastMintedTokenId = _mintRandomID(msg.sender);
-            setBaseStrength(msg.sender, lastMintedTokenId);
+            tokenId = _mintRandomID(msg.sender);
+            setBaseStrength(msg.sender, tokenId);
         }
+        lastMintedTokenId = tokenId;
+        
         distributeMintFee(msg.value);
     }
 
@@ -94,10 +97,13 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
 
         require(remainingSupply >= mintAmount, "Amount exceeds the remaining supply!");
 
+        uint256 tokenId = lastMintedTokenId;
         for (uint256 i = 0; i < mintAmount; i++) {
-            lastMintedTokenId = _mintRandomID(msg.sender);
-            setBaseStrength(msg.sender, lastMintedTokenId);
+            tokenId = _mintRandomID(msg.sender);
+            setBaseStrength(msg.sender, tokenId);
         }
+        lastMintedTokenId = tokenId;
+
         distributeMintFee(msg.value);
 
         whiteListAddress[msg.sender] = whiteListAddress[msg.sender] - (_amount);
@@ -110,10 +116,12 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         require(freeMintAddress[msg.sender] >= _amount, "Amount exceeds user's free mint limit!");
         require(remainingSupply >= _amount, "Amount exceeds the remaining supply!");
 
+        uint256 tokenId = lastMintedTokenId;
         for (uint256 i = 0; i < _amount; i++) {
-            lastMintedTokenId = _mintRandomID(msg.sender);
-            setBaseStrength(msg.sender, lastMintedTokenId);
+            tokenId = _mintRandomID(msg.sender);
+            setBaseStrength(msg.sender, tokenId);
         }
+        lastMintedTokenId = tokenId;
 
         freeMintAddress[msg.sender] = freeMintAddress[msg.sender] - (_amount);
     }

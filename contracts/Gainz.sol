@@ -34,9 +34,7 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
     uint256 public totalStakedSanta;
     uint256 public totalStrengthAcquired;
 
-    //Events
-    event Staked(uint256 tokenId, uint256 timeStamp);
-    event UnStaked(uint256 tokenId, uint256 timeStamp);
+    //Events s
     event TierUp(uint256 tokenId, uint256 oldStrength, uint256 newStrength);
     event GainzMinted(address minter, uint256 amount);
     event GainzBurned(address minter, uint256 amount);
@@ -77,8 +75,6 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
             rarity = 6;
         }
 
-        require(rarity != 0, "Rarity Issue!");
-
         stakedSantas[tokenId] = StakedSantaObj(
             strength,
             rarity,
@@ -89,9 +85,6 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
 
         totalStakedSanta++;
         totalStrengthAcquired += strength;
-
-        // Unleash the event
-        emit Staked(tokenId, block.timestamp);
     }
 
     // Returns all of the user's staked santa IDs
@@ -186,9 +179,6 @@ contract Gainz is ERC20, Authorizable, ReentrancyGuard {
             // Actual strength can be fetched again from the RedPillSanta NFT contract
             santa.strength = 0;
             stakedSantas[tokenId] = santa;
-
-            // Unleash the event
-            emit UnStaked(tokenId, block.timestamp);
         }
     }
 
