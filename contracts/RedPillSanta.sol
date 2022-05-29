@@ -20,7 +20,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
     uint256 public _royaltyAmount = 50;     // 5% royalty
     uint256 public _belowFloorRoyaltyAmount = 250;     // 25% royalty
 
-    uint256 public prizeDenominator = 8;    // Percentage of funds for the winner
+    uint256 public prizeDenominator = 16;    // Percentage of funds for the winner
 
     uint256[4000] public remainingTokens;
     uint256 public remainingSupply = MAX_SANTAS;
@@ -222,12 +222,12 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
 
     function royaltyInfo(uint256 tokenId, uint256 salePrice) external view override returns (address receiver, uint256 royaltyAmount){
         if(salePrice <= mintPrice) {
-            return (owner(), salePrice * (_belowFloorRoyaltyAmount)/1000);
+            return (prizePoolWallet, salePrice * (_belowFloorRoyaltyAmount)/1000);
         } else {
             if(tokenId >= 0 && tokenId < 13) {
-                return (owner(), salePrice * (_royaltyAmount+10)/1000);
+                return (prizePoolWallet, salePrice * (_royaltyAmount+10)/1000);
             } else {
-                return (owner(), salePrice * (_royaltyAmount)/1000);
+                return (prizePoolWallet, salePrice * (_royaltyAmount)/1000);
             }
         }
     }
@@ -287,7 +287,7 @@ contract RedPillSanta is ERC721, ERC721Enumerable, Authorizable, ReentrancyGuard
         gameStartTime = block.timestamp;
     }
 
-    function setisGameSessionActive (bool _state) public onlyOwner {
+    function setGameSessionActive (bool _state) public onlyOwner {
         isGameSessionActive = _state;
     }
 

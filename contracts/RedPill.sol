@@ -19,7 +19,7 @@ contract RedPill is ERC721, ERC721Enumerable, ERC721Burnable, Authorizable, Reen
     // State Variables
     Counters.Counter private _tokenIdCounter;
 
-    bool public paused = true;
+    bool public paused = false;
 
     uint256 public constant MAX_PILLS = 11817;
     string private _baseTokenURI; 

@@ -13,11 +13,6 @@ module.exports = {
     }
   },
   networks: {
-    rinkeby: {
-      url: process.env.RINKEBY_URL,
-      accounts: [process.env.PRIVATE_KEY]
-      // timeout: 120000
-    },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
       gasPrice: 225000000000,
@@ -30,10 +25,5 @@ module.exports = {
       chainId: 43114,
       accounts: [process.env.PRIVATE_KEY]
     },
-  },
-  //  etherscan: {
-  //     // Your API key for Etherscan
-  //     // Obtain one at https://etherscan.io/
-  //     apiKey: [process.env.API_KEY]
-  //   }
+  }
 };
