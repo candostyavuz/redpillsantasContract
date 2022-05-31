@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-const redPillSantaAddress = "0xe382eb29761E6f71628e42e65b75D5e11712EEb3"
+const redPillSantaAddress = "0x66D7d48009EfC10F72448162FA813f57113d93F1"
 
 const addresses = [
   "0x5336A16cDD3C7A9f37f38674cc45cdF98A69DB7e",
@@ -73,7 +73,7 @@ const addresses = [
 
 async function main() {
 
-  const owner = await ethers.provider.getSigner("0xb70A69CaF32786C68C5a8D489Efd8b1056f242D0");
+  const owner = await ethers.provider.getSigner("0x8606aca0733Cd2D23638aC1b80534Bf13633fb2A");
 
   const santaContract = await hre.ethers.getContractAt("RedPillSanta", redPillSantaAddress);
 

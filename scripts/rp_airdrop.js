@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-const redPillAddress = "0xA6594CD764550ee156fb0aABf1bb73ffb5dBC24c"
+const redPillAddress = "0x4d4FC8E49b045b7B3F16a2fc8480743a484D3D05"
 
 const addresses = [
   "0xC920158ed2D84b311f11963485207C12D18F02Cf",
@@ -26,7 +26,7 @@ const addresses = [
 ]
 
 async function main() {
-  const owner = await ethers.provider.getSigner("0xb70A69CaF32786C68C5a8D489Efd8b1056f242D0");
+  const owner = await ethers.provider.getSigner("0x8606aca0733Cd2D23638aC1b80534Bf13633fb2A");
   const rpContract = await hre.ethers.getContractAt("RedPill", redPillAddress);
 
   for (let i = 0; i < addresses.length; i++) {
