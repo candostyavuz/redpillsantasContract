@@ -5,10 +5,10 @@ async function main() {
 
   let baseURI = "ipfs://QmUBkWy23dRTb5UUSi6qn6mpApxmj88a1RP9AYstrUtaJv/";
   let baseURI_RP = "ipfs://QmUMrcqoLDsEPrZY3qYD43Rqid3eyAeXQRFjc8B5UXBVv7/"
-  let admin1 = "0xb70A69CaF32786C68C5a8D489Efd8b1056f242D0";
-  let admin2 = "0x3EC0a5C399ACEEFEC2dda402a4435fF1085146E1";
-  let admin3 = "0x44Fc5557bA608F32C721F4f1216bB99943c8cD84";
-  let prizeWallet = "0x8E8A40D012872A6E6bf2D888DD6cD5C5F06a9c69";
+  let admin1 = "0x8606aca0733Cd2D23638aC1b80534Bf13633fb2A";
+  let admin2 = "0x94Bb8EA39921e21bEa9ff855058c8fdb153A99F7";
+  let admin3 = "0xC62aafc8Cd26560A8133Dc9663E738A6C667e0FA";
+  let prizeWallet = "0x57681971DC7D8F4F9751923b7215E7eb1Df1A9cb";
 
   const owner = await ethers.provider.getSigner(admin1);
 
